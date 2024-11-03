@@ -1,28 +1,64 @@
 
 from sklearn.datasets import load_iris
+from sklearn.datasets import load_breast_cancer
 from sklearn import tree
 from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
 import pandas as pd
 from sklearn.model_selection import GridSearchCV, KFold
 import joblib
+import matplotlib.pyplot as plt
 
 
 ### This code shows how to use KFold to do cross_validation.
 ### This is just one of many ways to manage training and test sets in sklearn.
 
-iris = load_iris()
-X, y = iris.data, iris.target
-scores = []
-kf = KFold(n_splits=5)
-for train_index, test_index in kf.split(X) :
-    X_train, X_test, y_train, y_test = \
-        (X[train_index], X[test_index], y[train_index], y[test_index])
-    clf = tree.DecisionTreeClassifier()
-    clf.fit(X_train, y_train)
-    scores.append(clf.score(X_test, y_test))
+# iris = load_iris()
+# X, y = iris.data, iris.target
+# scores = []
+# kf = KFold(n_splits=5)
+# for train_index, test_index in kf.split(X) :
+#     X_train, X_test, y_train, y_test = \
+#         (X[train_index], X[test_index], y[train_index], y[test_index])
+#     clf = tree.DecisionTreeClassifier()
+#     clf.fit(X_train, y_train)
+#     scores.append(clf.score(X_test, y_test))
+#
+# print(scores)
 
-print(scores)
+## Problem 1
+estimator_counts = [10, 25, 50]
+separators = ['gini', 'entropy']
+
+X,y = load_breast_cancer(return_X_y=True, as_frame=True)
+res = []
+kf = KFold(n_splits=5)
+for count in estimator_counts:
+    for criterion in separators:
+        fold_accuracies = []
+        for train_index, test_index in kf.split(X) :
+            X_train, X_test, y_train, y_test = \
+                (X.iloc[train_index], X.iloc[test_index], y.iloc[train_index], y.iloc[test_index])
+            clf = RandomForestClassifier(n_estimators=count, criterion=criterion)
+            clf.fit(X_train, y_train)
+
+            fold_accuracies.append(clf.score(X_test, y_test))
+
+        res.append({
+            "n_estimators": count,
+            "separator": criterion,
+            "average fold accuracy": sum(fold_accuracies) / len(fold_accuracies)
+        })
+
+df = pd.DataFrame(res)
+
+figure, ax = plt.subplots(figsize=(16, 8))
+
+ax.axis('off')
+table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
+table.set_fontsize(16)
+table.scale(1.5, 1.5)
+plt.show()
 
 ## Part 2. This code (from https://scikit-learn.org/1.5/auto_examples/ensemble/plot_forest_hist_grad_boosting_comparison.html)
 ## shows how to use GridSearchCV to do a hyperparameter search to compare two techniques.
