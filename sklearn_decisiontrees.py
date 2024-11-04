@@ -39,7 +39,7 @@ for count in estimator_counts:
         for train_index, test_index in kf.split(X) :
             X_train, X_test, y_train, y_test = \
                 (X.iloc[train_index], X.iloc[test_index], y.iloc[train_index], y.iloc[test_index])
-            clf = RandomForestClassifier(n_estimators=count, criterion=criterion)
+            clf = RandomForestClassifier(n_estimators=count, criterion=criterion, random_state=50)
             clf.fit(X_train, y_train)
 
             fold_accuracies.append(clf.score(X_test, y_test))
@@ -62,12 +62,14 @@ plt.show()
 
 ## Part 2. This code (from https://scikit-learn.org/1.5/auto_examples/ensemble/plot_forest_hist_grad_boosting_comparison.html)
 ## shows how to use GridSearchCV to do a hyperparameter search to compare two techniques.
-from sklearn.datasets import load_breast_cancer
-
 X,y = load_breast_cancer(return_X_y=True, as_frame=True)
 
 N_CORES = joblib.cpu_count(only_physical_cores=True)
 print(f"Number of physical cores: {N_CORES}")
+
+# a) test 5, 10, 15, and 20 estimators for Random Forest
+# b) test 25, 50, 75, and 100 iterations for Histogram Boosting
+# c) do 5 splits
 
 models = {
     "Random Forest": RandomForestClassifier(
@@ -77,11 +79,13 @@ models = {
         max_leaf_nodes=15, random_state=0, early_stopping=False
     ),
 }
+
 param_grids = {
-    "Random Forest": {"n_estimators": [10, 20, 50, 100]},
-    "Hist Gradient Boosting": {"max_iter": [10, 20, 50, 100, 300, 500]},
+    "Random Forest": {"n_estimators": [5, 10, 15, 20]},
+    "Hist Gradient Boosting": {"max_iter": [25, 50, 75, 100]},
 }
-cv = KFold(n_splits=2, shuffle=True, random_state=0)
+
+cv = KFold(n_splits=5, shuffle=True, random_state=0)
 
 results = []
 for name, model in models.items():
