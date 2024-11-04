@@ -1,5 +1,6 @@
 from pgmpy.models import BayesianNetwork
 from pgmpy.inference import VariableElimination
+from torch.fx.experimental.unification import variables
 
 alarm_model = BayesianNetwork(
     [
@@ -43,7 +44,7 @@ cpd_marycalls = TabularCPD(
     values=[[0.1, 0.7], [0.9, 0.3]],
     evidence=["Alarm"],
     evidence_card=[2],
-state_names={"Alarm":['yes','no'], "MaryCalls":['yes', 'no']},
+    state_names={"Alarm":['yes','no'], "MaryCalls":['yes', 'no']},
 )
 
 # Associating the parameters with the model structure
@@ -53,6 +54,21 @@ alarm_model.add_cpds(
 alarm_infer = VariableElimination(alarm_model)
 
 print(alarm_infer.query(variables=["JohnCalls"],evidence={"Earthquake":"yes"}))
-q = alarm_infer.query(variables=["JohnCalls", "Earthquake"],evidence={"Burglary":"yes","MaryCalls":"yes"}))
+q = alarm_infer.query(variables=["JohnCalls", "Earthquake"],evidence={"Burglary":"yes","MaryCalls":"yes"})
 print(q)
+
+### Problem 2:
+
+#the probability of Mary Calling given that John called
+q2 = alarm_infer.query(variables=["MaryCalls"], evidence={"JohnCalls":"yes"})
+print(q2)
+print("Probability of Mary Calling given that John called:", q2.values[0])
+#The probability of both John and Mary calling given Alarm
+q3 = alarm_infer.query(variables=["JohnCalls", "MaryCalls"], evidence={"Alarm":"yes"})
+print(q3)
+print("Probability of both John and Mary calling given Alarm:", q3.values[0][0])
+#the probability of Alarm, given that Mary called
+q4 = alarm_infer.query(variables=["Alarm"], evidence={"MaryCalls":"yes"})
+print(q4)
+print("Probability of Alarm, given that Mary called:", q4.values[0])
 
