@@ -1,5 +1,6 @@
 from pgmpy.models import BayesianNetwork
 from pgmpy.inference import VariableElimination
+from torch.fx.experimental.unification import variables
 
 car_model = BayesianNetwork(
     [
@@ -67,5 +68,49 @@ car_model.add_cpds( cpd_starts, cpd_ignition, cpd_gas, cpd_radio, cpd_battery, c
 car_infer = VariableElimination(car_model)
 
 print(car_infer.query(variables=["Moves"],evidence={"Radio":"turns on", "Starts":"yes"}))
+
+def main():
+    print("\nProblem 2 pt. 2 queries\n")
+    # Given that the car will not move, what is the probability that the battery is not working?
+    q = car_infer.query(variables=["Battery"], evidence={"Moves": "no"})
+    print(q)
+    print("Probability that the battery is not working given the car will not move:", q.values[1])
+    # Given that the radio is not working, what is the probability that the car will not start?
+    q2 = car_infer.query(variables=["Starts"], evidence={"Radio": "Doesn't turn on"})
+    print(q2)
+    print("Probability that the car will not start given the radio is not working:", q2.values[1])
+    # Given that the battery is working, does the probability of the radio working change if we discover that the car has gas in it?
+    q3_pt1 = car_infer.query(variables=["Radio"], evidence={"Battery": "Works"})
+    q3_pt2 = car_infer.query(variables=["Radio"], evidence={"Battery": "Works", "Gas": "Full"})
+
+    print(q3_pt1)
+    print(q3_pt2)
+
+    choice = "no" if q3_pt1.values[0] == q3_pt2.values[0] else "yes"
+    print(f"Given the battery is working, does the probability of the radio working change if we discover that the car has gas in it: {choice}")
+    # Given that the car doesn't move, how does the probability of the ignition failing change if we observe that the car dies not have gas in it?
+    q4_pt1 = car_infer.query(variables=["Ignition"], evidence={"Moves": "no"})
+    q4_pt2 = car_infer.query(variables=["Ignition"], evidence={"Moves": "no", "Gas": "Empty"})
+
+    p1 = q4_pt1.values[1]
+    p2 = q4_pt2.values[1]
+
+    if p1 < p2:
+        choice = "the probability of the ignition failing increases"
+    elif p1 > p2:
+        choice = "the probability of the ignition failing decreases"
+    else:
+        choice = "the probability of the ignition failing doesn't change"
+
+    print(q4_pt1)
+    print(q4_pt2)
+    print(f"Given that the car doesn't move, {choice} if we observe that the car dies without having gas in it")
+    # What is the probability that the car starts if the radio works and it has gas in it?
+    q5 = car_infer.query(variables=["Starts"], evidence={"Radio": "turns on", "Gas": "Full"})
+    print(q5)
+    print("The probability that the car starts if the radio works and it has gas in it:", q5.values[0])
+
+if __name__ == "__main__":
+    main()
 
 

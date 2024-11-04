@@ -59,7 +59,7 @@ print(q)
 
 def main():
     ### Problem 2:
-    print("\nProblem 2 queries\n")
+    print("\nProblem 2 pt. 1 queries\n")
     # the probability of Mary Calling given that John called
     q2 = alarm_infer.query(variables=["MaryCalls"], evidence={"JohnCalls": "yes"})
     print(q2)
