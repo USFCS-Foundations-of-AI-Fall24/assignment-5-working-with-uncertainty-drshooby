@@ -4,6 +4,8 @@ import random
 import argparse
 import codecs
 import os
+from collections import defaultdict
+
 import numpy
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -29,7 +31,6 @@ class HMM:
               'hungry': {'silent': '0.2', 'meow': '0.6', 'purr': '0.2'}}"""
 
 
-
         self.transitions = transitions
         self.emissions = emissions
 
@@ -38,7 +39,28 @@ class HMM:
         """reads HMM structure from transition (basename.trans),
         and emission (basename.emit) files,
         as well as the probabilities."""
-        pass
+        with open(basename + ".trans") as transitionfile:
+            lines = [line.strip().split() for line in transitionfile]
+            transition_tmp = defaultdict(dict)
+            for line in lines:
+                transition_tmp[line[0]][line[1]] = line[2]
+            self.transitions = dict(transition_tmp)
+
+        with open(basename + ".emit") as emissionfile:
+            lines = [line.strip().split() for line in emissionfile]
+            emission_tmp = defaultdict(dict)
+            for line in lines:
+                emission_tmp[line[0]][line[1]] = line[2]
+            self.emissions = dict(emission_tmp)
+
+
+
+def main():
+    hmm = HMM()
+    hmm.load('cat')
+
+if __name__ == '__main__':
+    main()
 
 
    ## you do this.
