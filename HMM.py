@@ -7,6 +7,8 @@ import os
 from collections import defaultdict
 
 import numpy
+import numpy as np
+
 
 # Sequence - represents a sequence of hidden states and corresponding
 # output variables.
@@ -53,36 +55,49 @@ class HMM:
                 emission_tmp[line[0]][line[1]] = line[2]
             self.emissions = dict(emission_tmp)
 
-
-
-def main():
-    hmm = HMM()
-    hmm.load('cat')
-
-if __name__ == '__main__':
-    main()
-
-
    ## you do this.
     def generate(self, n):
         """return an n-length Sequence by randomly sampling from this HMM."""
-        pass
+        sequence = []
+
+        init_probabilities = self.transitions["#"]
+        init_states = list(init_probabilities.keys())
+        init_weights = [float(init_probabilities[state]) for state in init_states]
+
+        curr_state = random.choices(init_states, weights=init_weights, k=1)[0]
+
+        for _ in range(n):
+            e_probabilities = self.emissions[curr_state]
+            actions = list(e_probabilities.keys())
+            action_weights = [float(e_probabilities[action]) for action in actions]
+            action = random.choices(actions, weights=action_weights, k=1)[0]
+
+            sequence.append(Sequence(curr_state, action))
+
+            t_probabilities = self.transitions[curr_state]
+            next_states = list(t_probabilities.keys())
+            next_weights = [float(t_probabilities[action]) for action in next_states]
+            curr_state = random.choices(next_states, weights=next_weights, k=1)[0]
+
+        return sequence
 
     def forward(self, sequence):
         pass
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
 
-
-
-
-
-
     def viterbi(self, sequence):
         pass
     ## You do this. Given a sequence with a list of emissions, fill in the most likely
     ## hidden states using the Viterbi algorithm.
 
+def main():
+    hmm = HMM()
+    hmm.load('cat')
+    print(hmm.generate(20))
+
+if __name__ == '__main__':
+    main()
 
 
 
