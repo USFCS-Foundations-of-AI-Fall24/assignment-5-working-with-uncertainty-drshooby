@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from HMM import HMM
@@ -24,3 +25,19 @@ class HMMTest(unittest.TestCase):
         self.assertEqual(hmm.transitions, want_transition)
         self.assertEqual(hmm.emissions, want_emission)
 
+    def test_lander_transition_gen(self):
+
+        # cells where 3 probabilities are available = (4 * 3) * 4
+        # cells where 2 probabilities are available = (4 * 2) + (4 * 2)
+        # cells where 1 probability is available = 1
+        # file should have 65 lines + initial probability = 66
+
+        want = 66
+        hmm = HMM()
+        hmm.get_transitions_mars()
+
+        with open("LANDER_TEST.trans") as test_file:
+            line_count = len(test_file.readlines())
+
+        self.assertEqual(line_count, want)
+        os.remove("LANDER_TEST.trans")

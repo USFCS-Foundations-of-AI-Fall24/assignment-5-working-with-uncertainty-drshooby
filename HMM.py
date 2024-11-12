@@ -1,13 +1,8 @@
-
-
 import random
 import argparse
 import codecs
 import os
 from collections import defaultdict
-
-import numpy
-import numpy as np
 
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -58,7 +53,7 @@ class HMM:
    ## you do this.
     def generate(self, n):
         """return an n-length Sequence by randomly sampling from this HMM."""
-        sequence = []
+        sequence = Sequence([], [])
 
         init_probabilities = self.transitions["#"]
         init_states = list(init_probabilities.keys())
@@ -72,7 +67,8 @@ class HMM:
             action_weights = [float(e_probabilities[action]) for action in actions]
             action = random.choices(actions, weights=action_weights, k=1)[0]
 
-            sequence.append(Sequence(curr_state, action))
+            sequence.stateseq.append(curr_state)
+            sequence.outputseq.append(action)
 
             t_probabilities = self.transitions[curr_state]
             next_states = list(t_probabilities.keys())
@@ -80,6 +76,40 @@ class HMM:
             curr_state = random.choices(next_states, weights=next_weights, k=1)[0]
 
         return sequence
+
+    def get_transitions_mars(self, n=5, fname="LANDER_TEST.trans"):
+
+        probs = defaultdict(dict)
+        probs['#'][(1, 1)] = 1.0
+
+        def in_bounds(i, j):
+            return 0 <= i < n + 1 and 0 <= j < n + 1
+
+        for i in range(1, n + 1):
+            for j in range(1, n + 1):
+                transitions = []
+                if in_bounds(i, j + 1):
+                    transitions.append(((i, j + 1), 0.15))
+                if in_bounds(i + 1, j):
+                    transitions.append(((i + 1, j), 0.15))
+                if in_bounds(i + 1, j + 1):
+                    transitions.append(((i + 1, j + 1), 0.70))
+                # sanity check: should be 3 max for this, since you can only go down, diagonal, or right
+                total_probabilities = 0
+                for state, prob in transitions:
+                    probs[(i, j)][state] = prob
+                    total_probabilities += prob
+                if total_probabilities != 1.0:
+                    probs[(i, j)][(i, j)] = 1.0 - total_probabilities
+
+        with open(fname, "w") as lander_file:
+            for k, v in probs.items():
+                # outer dict
+                start = f"{k[0]},{k[1]}" if k != "#" else k
+                # inner dict
+                for state, prob in v.items():
+                    lander_file.write(f'{start} {state[0]},{state[1]} {prob}\n')
+
 
     def forward(self, sequence):
         pass
@@ -92,9 +122,15 @@ class HMM:
     ## hidden states using the Viterbi algorithm.
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("basename", help="HMM basename (e.g., cat, partsofspeech, etc.")
+    parser.add_argument("--generate", type=int, help="Generate a random sequence of length n")
+    args = parser.parse_args()
     hmm = HMM()
-    hmm.load('cat')
-    print(hmm.generate(20))
+    if args.generate:
+        hmm.load(args.basename)
+    # print(hmm.generate(args.generate))
+    hmm.get_transitions_mars()
 
 if __name__ == '__main__':
     main()
