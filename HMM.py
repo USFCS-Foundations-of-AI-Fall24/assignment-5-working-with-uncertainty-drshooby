@@ -143,7 +143,34 @@ class HMM:
                     lander_file.write(f'{start} {state[0]},{state[1]} {prob}\n')
 
     def forward(self, sequence):
-        pass
+
+        M = defaultdict(dict)
+        T = self.transitions
+        E = self.emissions
+        O = sequence.outputseq
+        state_values = sequence.stateseq
+        states = [state for state in self.transitions if state != "#"]
+
+        for s in state_values:
+            t = T["#"][s]
+            e = E[s][O[0]]
+            M[1][s] = float(t) * float(e)
+
+        for i in range(2, len(sequence.stateseq) + 1):
+            for s in states:
+                sum_ = 0
+                for s2 in states:
+                    # I apologize, this is so confusing
+                    # M is a 1-indexed dictionary
+                    # O is a 0-indexed array
+                    # since we start at i = 2, M needs to lookup M[1] next
+                    # O[0] was used in the init, so O[1] is next
+                    sum_ += M[i - 1][s2] * float(T[s2][s]) * float(E[s2][O[i - 1]])
+                M[i][s] = sum_
+
+        return M
+
+
     ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
     ## determine the most likely sequence of states.
 
@@ -160,9 +187,9 @@ def main():
     hmm = HMM()
     if args.generate:
         hmm.load(args.basename)
-    # print(hmm.generate(args.generate))
-    # hmm.get_transitions_mars()
-    hmm.get_emissions_mars()
+    seq = hmm.generate(args.generate)
+    r = hmm.forward(seq)
+    print(r)
 
 if __name__ == '__main__':
     main()
