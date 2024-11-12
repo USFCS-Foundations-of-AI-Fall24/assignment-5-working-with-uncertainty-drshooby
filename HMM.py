@@ -83,7 +83,7 @@ class HMM:
         probs['#'][(1, 1)] = 1.0
 
         def in_bounds(i, j):
-            return 0 <= i < n + 1 and 0 <= j < n + 1
+            return 0 < i < n + 1 and 0 < j < n + 1
 
         for i in range(1, n + 1):
             for j in range(1, n + 1):
@@ -110,6 +110,37 @@ class HMM:
                 for state, prob in v.items():
                     lander_file.write(f'{start} {state[0]},{state[1]} {prob}\n')
 
+    def get_emissions_mars(self, n=5, fname="LANDER_TEST.emit"):
+        probs = defaultdict(dict)
+        # correct p=0.6, other directions 0.1
+        # up down right left
+        dirs = [(0, -1), (0, 1), (1, 0), (-1, 0)]
+        def in_bounds(i, j):
+            return 0 < i < n + 1 and 0 < j < n + 1
+
+        for i in range(1, n + 1):
+            for j in range(1, n + 1):
+                transitions = []
+                missed = 0
+                for dx, dy in dirs:
+                    if in_bounds(i + dx, j + dy):
+                        transitions.append(((i + dx, j + dy), 0.1))
+                    else:
+                        missed += 0.1
+
+                # update the probability of the current position (from Piazza)
+                transitions.insert(0, ((i, j), 0.6 + missed))
+
+                for state, prob in transitions:
+                    probs[(i, j)][state] = prob
+
+        with open(fname, "w") as lander_file:
+            for k, v in probs.items():
+                # outer dict
+                start = f"{k[0]},{k[1]}"
+                # inner dict
+                for state, prob in v.items():
+                    lander_file.write(f'{start} {state[0]},{state[1]} {prob}\n')
 
     def forward(self, sequence):
         pass
@@ -130,7 +161,8 @@ def main():
     if args.generate:
         hmm.load(args.basename)
     # print(hmm.generate(args.generate))
-    hmm.get_transitions_mars()
+    # hmm.get_transitions_mars()
+    hmm.get_emissions_mars()
 
 if __name__ == '__main__':
     main()

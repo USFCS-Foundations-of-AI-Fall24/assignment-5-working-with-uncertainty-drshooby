@@ -41,3 +41,20 @@ class HMMTest(unittest.TestCase):
 
         self.assertEqual(line_count, want)
         os.remove("LANDER_TEST.trans")
+
+    def test_lander_emission_gen(self):
+
+        # cells where 4 directions are available = (3 * 3 * 4) + 9 (count the cells themselves)
+        # cells where 3 directions are available = (3 * 4 * 3) + 12
+        # cells where 2 directions are available = (2 * 4) + 4
+        # file should have 105 lines
+
+        want = 105
+        hmm = HMM()
+        hmm.get_emissions_mars()
+
+        with open("LANDER_TEST.emit") as test_file:
+            line_count = len(test_file.readlines())
+
+        self.assertEqual(line_count, want)
+        os.remove("LANDER_TEST.emit")
