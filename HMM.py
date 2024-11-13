@@ -151,7 +151,7 @@ class HMM:
                 for state, prob in v.items():
                     lander_file.write(f'{start} {state[0]},{state[1]} {prob}\n')
 
-    def forward(self, sequence):
+    def forward(self, sequence, is_lander=False):
 
         M = defaultdict(dict)
         M[0]["#"] = 1.0
@@ -171,14 +171,22 @@ class HMM:
                 for prev in self.transitions:
                     if prev == "#":
                         continue
-                    transition_prob = self.transitions[prev][curr]
-                    emission_prob = self.emissions[curr][obs]
-                    dp = M[i - 1][prev]
+                    transition_prob = self.transitions[prev].get(curr, 0)
+                    emission_prob = self.emissions[curr].get(obs, 0)
+                    dp = M[i - 1].get(prev, 0)
                     sum_ += dp * float(transition_prob) * float(emission_prob)
                 M[i][curr] = sum_
 
-        return max(M[len(sequence.outputseq) - 1])
+        ret = max(M[len(sequence.outputseq) - 1])
 
+        if is_lander:
+            safe_positions = {
+                "2,5","3,4","4,3","4,4","5,5"
+            }
+            safety = "is safe" if ret in safe_positions else "is not safe"
+            print(f"It {safety} to land.")
+
+        return ret
 
     # def viterbi(self, sequence):
     #
@@ -213,6 +221,7 @@ def main():
     parser.add_argument("basename", help="HMM basename (e.g., cat, partsofspeech, etc.")
     parser.add_argument("--generate", type=int, help="Generate a random sequence of length n")
     parser.add_argument("--forward", type=str, help="Run the forward algorithm on a .obs file")
+    parser.add_argument("--viterbi", type=str, help="Run the viterbi algorithm on a .obs file")
     args = parser.parse_args()
     hmm = HMM()
     hmm.load(args.basename)
@@ -221,7 +230,7 @@ def main():
     if args.forward:
         obsfile = args.forward
         seq = generate_sequence_from_obs(obsfile)
-        r = hmm.forward(seq)
+        r = hmm.forward(seq) if not "lander" in obsfile else hmm.forward(seq, is_lander=True)
         print(r)
 
 
