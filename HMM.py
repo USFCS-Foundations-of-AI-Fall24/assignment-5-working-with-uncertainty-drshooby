@@ -3,6 +3,7 @@ import argparse
 import codecs
 import os
 from collections import defaultdict
+from os.path import basename
 
 
 # Sequence - represents a sequence of hidden states and corresponding
@@ -51,7 +52,7 @@ class HMM:
             self.emissions = dict(emission_tmp)
 
    ## you do this.
-    def generate(self, n):
+    def generate(self, n, basename):
         """return an n-length Sequence by randomly sampling from this HMM."""
         sequence = Sequence([], [])
 
@@ -72,10 +73,18 @@ class HMM:
 
             t_probabilities = self.transitions[curr_state]
             next_states = list(t_probabilities.keys())
-            next_weights = [float(t_probabilities[action]) for action in next_states]
+            next_weights = [float(t_probabilities[state]) for state in next_states]
             curr_state = random.choices(next_states, weights=next_weights, k=1)[0]
 
-        return sequence
+        with open(basename + "_sequence.tagged.obs", "w") as obsfile_tagged:
+            for state, out in zip(sequence.stateseq, sequence.outputseq):
+                obsfile_tagged.write(state + "\n")
+                obsfile_tagged.write(out + "\n")
+
+        with open(basename + "_sequence.obs", "w") as obsfile:
+            for out in sequence.outputseq:
+                obsfile.write("\n")
+                obsfile.write(out + "\n")
 
     def get_transitions_mars(self, n=5, fname="LANDER_TEST.trans"):
 
@@ -145,51 +154,76 @@ class HMM:
     def forward(self, sequence):
 
         M = defaultdict(dict)
-        T = self.transitions
-        E = self.emissions
-        O = sequence.outputseq
-        state_values = sequence.stateseq
-        states = [state for state in self.transitions if state != "#"]
+        M[0]["#"] = 1.0
+        for s in self.transitions["#"]:
+            if s == "#":
+                continue
+            t = float(self.transitions["#"][s])
+            e = float(self.emissions[s][sequence.outputseq[0]])
+            M[0][s] = t * e
 
-        for s in state_values:
-            t = T["#"][s]
-            e = E[s][O[0]]
-            M[1][s] = float(t) * float(e)
-
-        for i in range(2, len(sequence.stateseq) + 1):
-            for s in states:
+        for i in range(1, len(sequence.outputseq)):
+            obs = sequence.outputseq[i]
+            for curr in self.transitions:
+                if curr == "#":
+                    continue
                 sum_ = 0
-                for s2 in states:
-                    # I apologize, this is so confusing
-                    # M is a 1-indexed dictionary
-                    # O is a 0-indexed array
-                    # since we start at i = 2, M needs to lookup M[1] next
-                    # O[0] was used in the init, so O[1] is next
-                    sum_ += M[i - 1][s2] * float(T[s2][s]) * float(E[s2][O[i - 1]])
-                M[i][s] = sum_
+                for prev in self.transitions:
+                    if prev == "#":
+                        continue
+                    transition_prob = self.transitions[prev][curr]
+                    emission_prob = self.emissions[curr][obs]
+                    dp = M[i - 1][prev]
+                    sum_ += dp * float(transition_prob) * float(emission_prob)
+                M[i][curr] = sum_
 
-        return M
+        return max(M[len(sequence.outputseq) - 1])
 
 
-    ## you do this: Implement the Viterbi algorithm. Given a Sequence with a list of emissions,
-    ## determine the most likely sequence of states.
+    # def viterbi(self, sequence):
+    #
+    #     M = defaultdict(dict)
+    #     T = self.transitions
+    #     E = self.emissions
+    #     O = sequence.outputseq
+    #     state_values = sequence.stateseq
+    #     states = [state for state in self.transitions if state != "#"]
+    #
+    #     backpointers = defaultdict(dict)
+    #
+    #     for s in state_values:
+    #         transition = T["#"][s]
+    #         emission = E[s][O[0]]
+    #         M[1][s] = float(transition) * float(emission)
+    #
+    #     for o in sequence.outputseq:
+    #         for s in state_values:
+    #             val =
 
-    def viterbi(self, sequence):
-        pass
-    ## You do this. Given a sequence with a list of emissions, fill in the most likely
-    ## hidden states using the Viterbi algorithm.
+def generate_sequence_from_obs(obsfile):
+    seq = Sequence([], [])
+    with open(obsfile) as file:
+        lines = [line.strip() for line in file.readlines() if line.strip()]
+        for line in lines:
+            seq.outputseq.append(line)
+    return seq
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("basename", help="HMM basename (e.g., cat, partsofspeech, etc.")
     parser.add_argument("--generate", type=int, help="Generate a random sequence of length n")
+    parser.add_argument("--forward", type=str, help="Run the forward algorithm on a .obs file")
     args = parser.parse_args()
     hmm = HMM()
+    hmm.load(args.basename)
     if args.generate:
-        hmm.load(args.basename)
-    seq = hmm.generate(args.generate)
-    r = hmm.forward(seq)
-    print(r)
+        hmm.generate(args.generate, args.basename)
+    if args.forward:
+        obsfile = args.forward
+        seq = generate_sequence_from_obs(obsfile)
+        r = hmm.forward(seq)
+        print(r)
+
 
 if __name__ == '__main__':
     main()

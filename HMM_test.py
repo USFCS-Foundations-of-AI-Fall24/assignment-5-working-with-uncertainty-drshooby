@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from HMM import HMM
+from HMM import HMM, Sequence
 
 
 class HMMTest(unittest.TestCase):
@@ -58,3 +58,13 @@ class HMMTest(unittest.TestCase):
 
         self.assertEqual(line_count, want)
         os.remove("LANDER_TEST.emit")
+
+    def test_forward(self):
+
+        hmm = HMM()
+        hmm.load("cat")
+        s = Sequence([], [])
+        # example from slides
+        s.outputseq = ["purr", "silent", "silent", "meow", "meow"]
+
+        self.assertEqual(hmm.forward(s), "hungry")
