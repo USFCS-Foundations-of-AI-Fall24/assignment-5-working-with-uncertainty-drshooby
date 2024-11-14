@@ -158,7 +158,7 @@ class HMM:
         M[0]["#"] = 1.0
         for s in self.transitions["#"]:
             M[0][s] = 0
-
+        # Trying to follow the class slides
         for s in self.transitions["#"]:
             if s == "#":
                 continue
@@ -251,7 +251,8 @@ class HMM:
             state_path.append(best_state)
 
         state_path.reverse()
-
+        # due to different rounding between my code and the slides
+        # the cat output might vary slightly
         return state_path
 
 def generate_sequence_from_obs(obsfile):
@@ -282,8 +283,6 @@ def main():
         if args.viterbi:
             r = hmm.viterbi(seq)
             print(r)
-
-
 
 if __name__ == '__main__':
     main()
