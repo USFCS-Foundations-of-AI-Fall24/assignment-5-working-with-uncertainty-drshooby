@@ -154,16 +154,20 @@ class HMM:
     def forward(self, sequence, is_lander=False):
 
         M = defaultdict(dict)
+
         M[0]["#"] = 1.0
+        for s in self.transitions["#"]:
+            M[0][s] = 0
+
         for s in self.transitions["#"]:
             if s == "#":
                 continue
             t = float(self.transitions["#"][s])
             e = float(self.emissions[s][sequence.outputseq[0]])
-            M[0][s] = t * e
+            M[1][s] = t * e
 
-        for i in range(1, len(sequence.outputseq)):
-            obs = sequence.outputseq[i]
+        for i in range(2, len(sequence.outputseq) + 1):
+            obs = sequence.outputseq[i - 1]
             for curr in self.transitions:
                 if curr == "#":
                     continue
@@ -188,25 +192,67 @@ class HMM:
 
         return ret
 
-    # def viterbi(self, sequence):
-    #
-    #     M = defaultdict(dict)
-    #     T = self.transitions
-    #     E = self.emissions
-    #     O = sequence.outputseq
-    #     state_values = sequence.stateseq
-    #     states = [state for state in self.transitions if state != "#"]
-    #
-    #     backpointers = defaultdict(dict)
-    #
-    #     for s in state_values:
-    #         transition = T["#"][s]
-    #         emission = E[s][O[0]]
-    #         M[1][s] = float(transition) * float(emission)
-    #
-    #     for o in sequence.outputseq:
-    #         for s in state_values:
-    #             val =
+    def viterbi(self, sequence):
+
+        M = defaultdict(dict)
+        backpointers = defaultdict(dict)
+
+        M[0]["#"] = 1.0
+        for s in self.transitions["#"]:
+            M[0][s] = 0
+
+        for i, s in enumerate(self.transitions["#"]):
+            if s == "#":
+                continue
+            t = float(self.transitions["#"][s])
+            e = float(self.emissions[s][sequence.outputseq[0]])
+            val = t * e
+            M[1][s] = val
+            backpointers[1][s] = "#"
+
+        for i in range(2, len(sequence.outputseq) + 1):
+            obs = sequence.outputseq[i - 1]
+            for curr in self.transitions:
+                if curr == "#":
+                    continue
+
+                max_val = float("-inf")
+                best_prev = None
+
+                for prev in self.transitions:
+                    if prev == "#":
+                        continue
+                    transition_prob = self.transitions[prev].get(curr, 0)
+                    emission_prob = self.emissions[curr].get(obs, 0)
+                    dp = M[i - 1].get(prev, 0)
+
+                    val = dp * float(transition_prob) * float(emission_prob)
+
+                    if val > max_val:
+                        max_val = val
+                        best_prev = prev
+
+                M[i][curr] = max_val
+                backpointers[i][curr] = best_prev
+
+        state_path = []
+        best_val = float("-inf")
+        best_state = None
+
+        for state, val in M[len(sequence.outputseq)].items():
+            if val > best_val:
+                best_val = val
+                best_state = state
+
+        state_path.append(best_state)
+
+        for i in range(len(sequence.outputseq), 1, -1):
+            best_state = backpointers[i][best_state]
+            state_path.append(best_state)
+
+        state_path.reverse()
+
+        return state_path
 
 def generate_sequence_from_obs(obsfile):
     seq = Sequence([], [])
@@ -227,11 +273,16 @@ def main():
     hmm.load(args.basename)
     if args.generate:
         hmm.generate(args.generate, args.basename)
-    if args.forward:
-        obsfile = args.forward
+    if args.forward or args.viterbi:
+        obsfile = args.forward or args.viterbi
         seq = generate_sequence_from_obs(obsfile)
-        r = hmm.forward(seq) if not "lander" in obsfile else hmm.forward(seq, is_lander=True)
-        print(r)
+        if args.forward:
+            r = hmm.forward(seq) if not "lander" in obsfile else hmm.forward(seq, is_lander=True)
+            print(r)
+        if args.viterbi:
+            r = hmm.viterbi(seq)
+            print(r)
+
 
 
 if __name__ == '__main__':
