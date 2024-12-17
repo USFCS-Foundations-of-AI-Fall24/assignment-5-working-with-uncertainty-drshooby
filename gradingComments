@@ -1,0 +1,59 @@
+Assignment 5 Comments:
+
+sklearn:
+
+new dataset. 5/5
+
+random forest 5/5
+
+GridSearchCV 5/5
+
+Scatterplot 5/5
+
+Belief Networks:
+
+alarm queries 5/5
+
+car queries 5/5
+
+additional node 5/5
+
+HMM:
+
+load 5/5
+
+generate 10/10
+
+lander models 5/5
+
+forward 10/10
+
+viterbi 12/15 I get an error with part of speech. Lander works, though.
+(base) cbrooks@Help-On-The-Way assignment-5-working-with-uncertainty-drshooby % 
+python HMM.py partofspeech --viterbi ambiguous_sents.obs     
+Traceback (most recent call last):
+  File "/Users/cbrooks/courses/Fall24/CS362/student_repos/assignment5/assignment-5-working-with-uncertainty-submissions/assignment-5-working-with-uncertainty-drshooby/HMM.py", line 288, in <module>
+    main()
+  File "/Users/cbrooks/courses/Fall24/CS362/student_repos/assignment5/assignment-5-working-with-uncertainty-submissions/assignment-5-working-with-uncertainty-drshooby/HMM.py", line 284, in main
+    r = hmm.viterbi(seq)
+  File "/Users/cbrooks/courses/Fall24/CS362/student_repos/assignment5/assignment-5-working-with-uncertainty-submissions/assignment-5-working-with-uncertainty-drshooby/HMM.py", line 208, in viterbi
+    e = float(self.emissions[s][sequence.outputseq[0]])
+KeyError: 'i shot the elephant .'
+
+
+Utility:
+
+q1 5/5
+
+q2 5/5
+
+q3 1/2 - need to renormalize probabilities
+
+q4 3/3
+
+q5 1/2 - if it's rocky we take route 1
+
+q6 0/3 - since route 1 is always preferred, the satellite is not helpful.
+
+92/100
+
